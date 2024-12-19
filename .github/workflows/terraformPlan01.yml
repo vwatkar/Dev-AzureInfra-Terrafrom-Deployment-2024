@@ -26,13 +26,14 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Set Azure Environment Variables
+    - name: Export Azure Environment Variables
       run: |
-        echo "Setting Azure environment variables for Terraform"
-        export ARM_CLIENT_ID=$(echo ${{ secrets.AZURE_CREDENTIALS }} | jq -r '.clientId')
-        export ARM_CLIENT_SECRET=$(echo ${{ secrets.AZURE_CREDENTIALS }} | jq -r '.clientSecret')
-        export ARM_SUBSCRIPTION_ID=$(echo ${{ secrets.AZURE_CREDENTIALS }} | jq -r '.subscriptionId')
-        export ARM_TENANT_ID=$(echo ${{ secrets.AZURE_CREDENTIALS }} | jq -r '.tenantId')
+        echo "Exporting Azure credentials for Terraform"
+        echo "ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientId')" >> $GITHUB_ENV
+        echo "ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientSecret')" >> $GITHUB_ENV
+        echo "ARM_SUBSCRIPTION_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.subscriptionId')" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.tenantId')" >> $GITHUB_ENV
+      shell: bash
 
     - name: Initialize Terraform
       run: terraform init
@@ -47,7 +48,3 @@ jobs:
     - name: Apply Terraform
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: terraform apply -auto-approve tfplan
-
-    - name: Run Azure CLI Command
-      run: |
-        az group list --output table
