@@ -26,6 +26,14 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Set Azure Environment Variables
+      run: |
+        echo "Setting Azure environment variables for Terraform"
+        export ARM_CLIENT_ID=$(echo ${{ secrets.AZURE_CREDENTIALS }} | jq -r '.clientId')
+        export ARM_CLIENT_SECRET=$(echo ${{ secrets.AZURE_CREDENTIALS }} | jq -r '.clientSecret')
+        export ARM_SUBSCRIPTION_ID=$(echo ${{ secrets.AZURE_CREDENTIALS }} | jq -r '.subscriptionId')
+        export ARM_TENANT_ID=$(echo ${{ secrets.AZURE_CREDENTIALS }} | jq -r '.tenantId')
+
     - name: Initialize Terraform
       run: terraform init
 
@@ -35,3 +43,11 @@ jobs:
     - name: Plan Terraform
       id: plan
       run: terraform plan -out=tfplan
+
+    - name: Apply Terraform
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve tfplan
+
+    - name: Run Azure CLI Command
+      run: |
+        az group list --output table
