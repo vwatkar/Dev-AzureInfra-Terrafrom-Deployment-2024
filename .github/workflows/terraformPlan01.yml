@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch: # Allows manual execution of validation
 
 jobs:
   deploy:
@@ -44,3 +45,28 @@ jobs:
     - name: Plan Terraform
       id: plan
       run: terraform plan -out=tfplan
+
+  manual-validation:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Review Terraform Plan
+      run: |
+        echo "Reviewing Terraform plan for manual validation"
+        cat tfplan
+
+    - name: Confirm Deployment
+      run: |
+        echo "Do you want to proceed with the deployment? (yes/no)"
+        read response
+        if [ "$response" != "yes" ]; then
+          echo "Aborting deployment."
+          exit 1
+        fi
+
+    - name: Apply Terraform
+      run: terraform apply -auto-approve tfplan
